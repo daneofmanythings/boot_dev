@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 from htmlnode import HTMLNode, LeafNode
+from enum import StrEnum
+
+
+class TextTypeNode(StrEnum):
+    TEXT = "text"
+    BOLD = "bold"
+    ITALIC = "italic"
+    CODE = "code"
+    LINK = "link"
+    IMAGE = "image"
 
 
 class TextNode:
     def __init__(self, text: str, text_type: str, url: str = "") -> None:
-        self.text = text
-        self.text_type = text_type
-        self.url = url
+        self.text: str = text
+        self.text_type: TextTypeNode = TextTypeNode(text_type)
+        self.url: str = url
 
     def __eq__(self, other: TextNode) -> bool:
         return (
@@ -22,17 +32,17 @@ class TextNode:
 
 def text_node_to_html_node(text_node: TextNode) -> HTMLNode:
     match text_node.text_type:
-        case "text":
+        case TextTypeNode.TEXT:
             return text_type_text(text_node)
-        case "bold":
+        case TextTypeNode.BOLD:
             return text_type_bold(text_node)
-        case "italic":
+        case TextTypeNode.ITALIC:
             return text_type_italic(text_node)
-        case "code":
+        case TextTypeNode.CODE:
             return text_type_code(text_node)
-        case "link":
+        case TextTypeNode.LINK:
             return text_type_link(text_node)
-        case "image":
+        case TextTypeNode.IMAGE:
             return text_type_image(text_node)
         case _:
             raise ValueError(
