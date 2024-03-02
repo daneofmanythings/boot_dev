@@ -1,34 +1,10 @@
 from textnode import TextNode, TextTypeNode
-from markdown_conversion import (
-    markdown_to_blocks,
+from text_to_textnode import (
     split_nodes_delimiter,
     split_nodes_image,
     split_nodes_link,
     text_to_textnode,
 )
-
-
-class TestMarkdownToBlocks:
-    def test_simple(self):
-        text = "This is\nsimple"
-        blocks = markdown_to_blocks(text)
-        assert blocks == [text]
-
-    def test_sample(self):
-        text = "This is a **bolded** paragraph\n\nThis is another paragraph with *italic* text and `code` here\nThis is the same paragraph on a new line\n\n* This is a list\n* with items"
-        blocks = markdown_to_blocks(text)
-
-        assert blocks == [
-            "This is a **bolded** paragraph",
-            "This is another paragraph with *italic* text and `code` here\nThis is the same paragraph on a new line",
-            "* This is a list\n* with items",
-        ]
-
-    def test_whitespace(self):
-        text = "\n\n\n\n   This\n\n   \nhas\na lot\n\nof\n\n  \n\nwhitespace\n  \n\n\n"
-        blocks = markdown_to_blocks(text)
-
-        assert blocks == ["This", "has a lot", "of", "whitespace"]
 
 
 class TestSplitNodesDelimiter:
@@ -46,6 +22,7 @@ class TestSplitNodesDelimiter:
     def test_multi(self, code_node, link_node):
         test_text_node = TextNode("test **bold** test", "text")
         old_nodes = [code_node, test_text_node, link_node]
+
         assert split_nodes_delimiter(old_nodes, "**", TextTypeNode.BOLD) == [
             code_node,
             TextNode("test ", "text"),
@@ -57,6 +34,7 @@ class TestSplitNodesDelimiter:
     def test_double(self, image_node):
         test_text_node = TextNode("this is **bold** and this is **bold**", "text")
         old_nodes = [image_node, test_text_node]
+
         assert split_nodes_delimiter(old_nodes, "**", TextTypeNode.BOLD) == [
             image_node,
             TextNode("this is ", "text"),
@@ -82,6 +60,7 @@ class TestSplitNodesImage:
             "text",
         )
         new_nodes = split_nodes_image([node])
+
         assert new_nodes == [
             TextNode("This is text with an ", TextTypeNode.TEXT),
             TextNode("image", TextTypeNode.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
@@ -128,6 +107,7 @@ class TestSplitNodesLink:
             "text",
         )
         new_nodes = split_nodes_link([node])
+
         assert new_nodes == [
             TextNode("This is text with an ", TextTypeNode.TEXT),
             TextNode("link", TextTypeNode.LINK, "https://i.imgur.com/zjjcJKZ.png"),
@@ -157,6 +137,7 @@ class TestTextToTextNode:
         text = "This is **text** with an *italic* word and a `code block` and an ![image](https://i.imgur.com/zjjcJKZ.png) and a [link](https://boot.dev)"
 
         textnodes = text_to_textnode(text)
+
         assert textnodes == [
             TextNode("This is ", "text"),
             TextNode("text", "bold"),

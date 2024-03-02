@@ -2,18 +2,6 @@ from textnode import TextNode, TextTypeNode
 from regex_extraction import extract_markdown_images, extract_markdown_links
 
 
-def markdown_to_blocks(markdown: str) -> list[str]:
-    block_delimeter = "\n\n"
-
-    blocks = markdown.split(block_delimeter)
-    for i in range(len(blocks)):
-        blocks[i] = blocks[i].strip()
-
-    blocks = list(filter(lambda b: b, blocks))
-
-    return blocks
-
-
 # NOTE: These implementations does not currently support nested delimiters
 def split_nodes_delimiter(
     old_nodes: list[TextNode], delimiter: str, text_type: TextTypeNode
