@@ -2,16 +2,36 @@ from blocks import (
     BlockType,
     BlockTypeType,
     block_to_block_type,
-    fetch_block_type_to_test,
+    peek_block_type,
     markdown_to_blocks,
 )
+
+
+class TestBlockTypes:
+    def test_validate_block_end(self):
+        text = "```This is a code block.```"
+        block_type = BlockType.CODE
+
+        assert BlockType.validate_block_end(text, block_type)
+
+    def test_validate_block_end_failure(self):
+        text = "```This is a code block.``"
+        block_type = BlockType.CODE
+
+        assert not BlockType.validate_block_end(text, block_type)
+
+    def test_validate_every_line_ordered(self):
+        text = "1. This\n2. is an\n3. ordered list."
+        block_type = BlockType.ORD_LIST
+
+        assert BlockType.validate_every_line(text, block_type)
 
 
 class TestBlockTypeTypes:
     def test_get_type_start(self):
         block_type = BlockType.HEADING6
 
-        assert BlockTypeType.get_type(block_type) == BlockTypeType.START_OF_BLOCK
+        assert BlockTypeType.get_type(block_type) == BlockTypeType.START
 
     def test_get_type_every(self):
         block_type = BlockType.ORD_LIST
@@ -24,15 +44,15 @@ class TestBlockTypeTypes:
         assert BlockTypeType.get_type(block_type) == BlockTypeType.START_AND_END
 
 
-class TestFetchBlockTypeToTest:
+class TestPeekBlockType:
     def test_h1(self):
-        assert fetch_block_type_to_test("#") == BlockType.HEADING1
+        assert peek_block_type("# ") == BlockType.HEADING1
 
     def test_out(self):
-        assert fetch_block_type_to_test("a") == BlockType.PARAGRAPH
+        assert peek_block_type("a") == BlockType.PARAGRAPH
 
     def test_code(self):
-        assert fetch_block_type_to_test("```") == BlockType.CODE
+        assert peek_block_type("```") == BlockType.CODE
 
 
 class TestBlockToBlockType:
@@ -43,7 +63,7 @@ class TestBlockToBlockType:
         assert block_type == BlockType.PARAGRAPH
 
     def test_heading1(self):
-        text = "# This is a HUGE heading."
+        text = "# This is a heading."
         block_type = block_to_block_type(text)
 
         assert block_type == BlockType.HEADING1
@@ -91,10 +111,16 @@ class TestBlockToBlockType:
         assert block_type == BlockType.PARAGRAPH
 
     def test_code(self):
-        text = "```This is a coooode block\nAnd it is very codelike```"
+        text = "```\nThis is code\n``` ``` And it has multiple blocks ```"
         block_type = block_to_block_type(text)
 
         assert block_type == BlockType.CODE
+
+    def test_quote(self):
+        text = "> This is a quote block.\n> Don't quote me on that"
+        block_type = block_to_block_type(text)
+
+        assert block_type == BlockType.QUOTE
 
 
 class TestMarkdownToBlocks:
