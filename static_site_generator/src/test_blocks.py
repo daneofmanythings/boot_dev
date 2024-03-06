@@ -4,7 +4,9 @@ from blocks import (
     block_to_block_type,
     peek_block_type,
     markdown_to_blocks,
+    markdown_to_html_node,
 )
+from htmlnode import ParentNode, LeafNode
 
 
 class TestBlockTypes:
@@ -145,3 +147,84 @@ class TestMarkdownToBlocks:
         blocks = markdown_to_blocks(text)
 
         assert blocks == ["This", "has\na lot", "of", "whitespace"]
+
+
+class TestBlockToHTML:
+    def test_header1_simple(self, html_root):
+        text = "# This is a header 1."
+        html_node = markdown_to_html_node(text)
+        node = ParentNode(tag="h1", children=[LeafNode(value="This is a header 1.")])
+        html_root.children.append(node)
+
+        assert html_node == html_root
+
+    def test_quoteblock_simple(self, html_root):
+        text = "> This is a blockquote.\n> It has more than one line."
+        html_node = markdown_to_html_node(text)
+        node = ParentNode(
+            tag="blockquote",
+            children=[
+                LeafNode(value=" This is a blockquote.\n It has more than one line.")
+            ],
+        )
+        html_root.children.append(node)
+
+        assert html_node == html_root
+
+    def test_unordered_list_simple(self, html_root):
+        text = "* This is \n- an unordered\n*list."
+        html_node = markdown_to_html_node(text)
+        node = ParentNode(
+            tag="ul",
+            children=[
+                ParentNode(tag="li", children=[LeafNode(value=" This is ")], props={}),
+                ParentNode(
+                    tag="li", children=[LeafNode(value=" an unordered")], props={}
+                ),
+                ParentNode(tag="li", children=[LeafNode(value="list.")], props={}),
+            ],
+            props={},
+        )
+        html_root.children.append(node)
+
+        assert html_node == html_root
+
+    def test_ordered_list_simple(self, html_root):
+        text = "1. This is \n2. an ordered\n3.list."
+        html_node = markdown_to_html_node(text)
+        node = ParentNode(
+            tag="ol",
+            children=[
+                ParentNode(tag="li", children=[LeafNode(value=" This is ")], props={}),
+                ParentNode(
+                    tag="li", children=[LeafNode(value=" an ordered")], props={}
+                ),
+                ParentNode(tag="li", children=[LeafNode(value="list.")], props={}),
+            ],
+            props={},
+        )
+        html_root.children.append(node)
+
+        assert html_node == html_root
+
+    def test_code_simple(self, html_root):
+        text = "```This is a code block.```\n```And another one```"
+        html_node = markdown_to_html_node(text)
+        node = ParentNode(
+            tag="pre",
+            children=[
+                ParentNode(
+                    tag="code",
+                    children=[LeafNode(value="This is a code block.")],
+                    props={},
+                ),
+                ParentNode(
+                    tag="code", children=[LeafNode(value="And another one")], props={}
+                ),
+            ],
+            props={},
+        )
+
+        html_root.children.append(node)
+
+        assert html_node == html_root

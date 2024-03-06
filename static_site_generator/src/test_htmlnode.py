@@ -71,7 +71,7 @@ class TestHTMLNode:
     def test_repr(self, default_htmlnode):
         assert (
             default_htmlnode.__repr__()
-            == "HTMLNode(a, link, [], {'href': 'google.com', 'test': 'value'})"
+            == "HTMLNode(a, link, {'href': 'google.com', 'test': 'value'}, [])"
         )
 
     def test_props_to_html(self, default_htmlnode):

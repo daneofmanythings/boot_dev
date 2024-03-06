@@ -1,4 +1,5 @@
 import pytest
+from htmlnode import ParentNode
 from textnode import TextNode
 
 
@@ -39,3 +40,8 @@ def link_node():
 @pytest.fixture
 def image_node():
     return TextNode("image", "image", "www.google.com/image.png")
+
+
+@pytest.fixture
+def html_root():
+    return ParentNode(tag="div", children=[], props={})

@@ -26,8 +26,15 @@ class HTMLNode:
 
     # TODO: Im assuming that this won't look nice. make it look nice
     def __repr__(self):
-        return f"HTMLNode({self.tag}, {self.value}, {self.children}, {self.props})"
+        out = f"HTMLNode({self.tag}, {self.value}, {self.props}, ["
 
+        for child in self.children:
+            out += "\n\t" + child.__repr__()
+
+        out += "])"
+        return out
+
+    # FIXME: This is not recursively checking children for equality
     def __eq__(self, other: HTMLNode) -> bool:
         return (
             self.tag == other.tag
@@ -70,4 +77,13 @@ class ParentNode(HTMLNode):
             out += node.to_html()
         out += f"</{self.tag}>"
 
+        return out
+
+    # TODO: Im assuming that this won't look nice. make it look nice
+    def __repr__(self):
+        out = f"ParentNode({self.tag}, {self.value}, {self.props}, ["
+        for child in self.children:
+            out += "\n\t" + child.__repr__()
+
+        out += "])"
         return out

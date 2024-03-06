@@ -1,5 +1,9 @@
 from __future__ import annotations
 from enum import StrEnum, Enum
+import re
+from htmlnode import HTMLNode, LeafNode, ParentNode
+from textnode import text_node_to_html_node
+from text_to_textnode import text_to_textnode
 
 
 class BlockType(StrEnum):
@@ -27,7 +31,7 @@ class BlockType(StrEnum):
     def validate_block_end(block: str, block_type: BlockType) -> bool:
         # NOTE: We got here by the block leading with "```". Now we check the splits length
         # to see if there are the correct number of surrounds
-        # TODO: Fix this for when someone gets triggerhappy with backticks
+        # TODO: Fix this for when someone gets triggerhappy with backticks for codeblocks
         return len(block.split(block_type.value)) % 2 == 1
 
     @staticmethod
@@ -39,6 +43,13 @@ class BlockType(StrEnum):
         if block_type == BlockType.ORD_LIST:
             for i in range(len(block_lines)):
                 if not block_lines[i].startswith(str(i + 1) + "."):
+                    return False
+        # NOTE: verifies the unordered list regardless of the delimiter
+        elif block_type == BlockType.STAR_LIST or block_type == BlockType.DASH_LIST:
+            for line in block_lines:
+                if not line.startswith(
+                    BlockType.STAR_LIST.value
+                ) or not line.startswith(BlockType.DASH_LIST.value):
                     return False
         else:
             for line in block_lines:
@@ -139,3 +150,136 @@ def block_to_block_type(block: str) -> BlockType:
         return BlockType.UNORD_LIST
 
     return block_type
+
+
+def heading_to_htmlnode(block: str, block_type: BlockType) -> HTMLNode:
+    header_len = len(block_type.value)
+    tag = f"h{header_len - 1}"
+    textnodes = text_to_textnode(block[header_len:])
+    children = list()
+    for node in textnodes:
+        children.append(text_node_to_html_node(node))
+
+    return ParentNode(tag=tag, children=children, props={})
+
+
+def code_to_html(block: str) -> HTMLNode:
+    # All code nodes are packed into a <pre>
+    pre_node = ParentNode(tag="pre", children=[], props={})
+    tag = "code"
+    # Isolating code blocks and stripping out any that might not be
+    code_blocks = block.split("```")
+    code_blocks = filter(lambda x: x and not x.isspace(), code_blocks)
+    # For each code block, we ...
+    for code_node in code_blocks:
+        # ... make its textnodes ...
+        textnodes = text_to_textnode(code_node)
+        children = list()
+        # ... convert them and add them as children ...
+        for textnode in textnodes:
+            children.append(text_node_to_html_node(textnode))
+        # ... make and append the code node to the pre node.
+        pre_node.children.append(ParentNode(tag=tag, children=children, props={}))
+
+    return pre_node
+
+
+def quote_to_html(block: str) -> HTMLNode:
+    tag = f"blockquote"
+    text = "\n".join(block.split("\n>"))
+    textnodes = text_to_textnode(text[1:])
+    children = list()
+    for node in textnodes:
+        children.append(text_node_to_html_node(node))
+
+    return ParentNode(tag=tag, children=children, props={})
+
+
+def ord_list_to_html(block: str) -> HTMLNode:
+    # Setup for the parent node
+    tag = "ol"
+    children = list()
+
+    # Splitting up the list items to be thier own nodes
+    list_items = re.split(r"\n\d+\.", block[2:])  # Cropping out first delimiter
+
+    # Constructing the list item nodes
+    for item in list_items:
+        children.append(list_item_to_html(item))
+
+    return ParentNode(tag=tag, children=children, props={})
+
+
+def unord_list_to_html(block: str) -> HTMLNode:
+    # Setup for the parent node
+    tag = "ul"
+    children = list()
+
+    # Normalizing the list delimiters
+    block = block[1:].replace("\n*", "\n-")
+
+    # Splitting up the list items to be thier own nodes
+    list_items = block.split("\n-")  # Cropping out first delimeter
+
+    # Constructing the list item nodes
+    for item in list_items:
+        children.append(list_item_to_html(item))
+
+    return ParentNode(tag=tag, children=children, props={})
+
+
+def list_item_to_html(list_item: str) -> HTMLNode:
+    tag = "li"
+    children = list()
+
+    textnodes = text_to_textnode(list_item)
+
+    for node in textnodes:
+        children.append(text_node_to_html_node(node))
+
+    return ParentNode(tag=tag, children=children, props={})
+
+
+def paragraph_to_html(block: str) -> HTMLNode:
+    tag = "p"
+    children = list()
+
+    textnodes = text_to_textnode(block)
+
+    for node in textnodes:
+        children.append(text_node_to_html_node(node))
+
+    return ParentNode(tag=tag, children=children, props={})
+
+
+def markdown_to_html_node(markdown: str) -> HTMLNode:
+    blocks = markdown_to_blocks(markdown)
+    root = ParentNode(tag="div", children=[], props={})
+    for block in blocks:
+        block_type = block_to_block_type(block)
+        match block_type:
+            case (
+                BlockType.HEADING6
+                | BlockType.HEADING5
+                | BlockType.HEADING4
+                | BlockType.HEADING3
+                | BlockType.HEADING2
+                | BlockType.HEADING1
+            ):
+                block_html = heading_to_htmlnode(block, block_type)
+            case BlockType.CODE:
+                block_html = code_to_html(block)
+            case BlockType.QUOTE:
+                block_html = quote_to_html(block)
+            case BlockType.ORD_LIST:
+                block_html = ord_list_to_html(block)
+            case BlockType.UNORD_LIST:
+                block_html = unord_list_to_html(block)
+            case BlockType.PARAGRAPH:
+                block_html = paragraph_to_html(block)
+            case _:
+                raise ValueError(f"Unhandled BlockType: {block_type}")
+
+        root.children.append(block_html)
+
+    return root
