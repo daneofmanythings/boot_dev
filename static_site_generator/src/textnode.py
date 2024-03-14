@@ -72,5 +72,7 @@ def text_type_link(text_node: TextNode) -> HTMLNode:
 
 def text_type_image(text_node: TextNode) -> HTMLNode:
     return LeafNode(
-        tag="img", value="", props={"src": text_node.url, "alt": text_node.text}
+        tag="img",
+        value=text_node.text,
+        props={"src": text_node.url, "alt": text_node.text},
     )

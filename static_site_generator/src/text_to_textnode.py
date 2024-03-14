@@ -53,7 +53,7 @@ def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
                 new_nodes.append(TextNode(plain_text, node.text_type))
             new_nodes.append(TextNode(image_info[0], "image", image_info[1]))
 
-        if text_to_parse:
+        if text_to_parse:  # Appending the last bid.
             new_nodes.append(TextNode(text_to_parse, node.text_type))
 
     return new_nodes

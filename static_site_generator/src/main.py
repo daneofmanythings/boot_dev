@@ -1,6 +1,7 @@
 from blocks import markdown_to_html_node
 from htmlnode import HTMLNode
 import os
+import pathlib
 import shutil
 
 
@@ -12,7 +13,7 @@ def main():
 
     copy_static_files(static_path, public_path)
     # Generate index page
-    generate_page(content_path + "index.md", template_path, public_path)
+    generate_pages(content_path, template_path, public_path)
 
 
 def copy_static_files(read_path, write_path):
@@ -47,6 +48,23 @@ def copy_static_files_r(read_path: str, write_path: str):
             shutil.copy(cur_read, write_path)
 
 
+def generate_pages(content_path_dir: str, template_path: str, dest_path_dir: str):
+    contents = os.listdir(content_path_dir)
+
+    for content in contents:
+        cur_read = os.path.join(content_path_dir, content)
+
+        if os.path.isdir(cur_read):
+            cur_write = os.path.join(dest_path_dir, content)
+            os.mkdir(cur_write)
+            generate_pages(cur_read, template_path, cur_write)
+        else:
+            file_name = pathlib.Path(content).with_suffix(".html")
+            generate_page(
+                cur_read, template_path, os.path.join(dest_path_dir, file_name)
+            )
+
+
 def generate_page(from_path: str, template_path: str, dest_path: str):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}...")
     markdown = ""
@@ -68,16 +86,20 @@ def generate_page(from_path: str, template_path: str, dest_path: str):
     page = ""
 
     page = template.replace(title_tag, title)
-    page = template.replace(content_tag, content)
+    page = page.replace(content_tag, content)
 
-    os.makedirs(dest_path, exist_ok=True)
+    dirs_to_make = pathlib.Path(dest_path).parents
+    os.makedirs(str(dirs_to_make), exist_ok=True)
 
-    with open(dest_path + "index.html", "w") as f:
+    with open(dest_path, "w") as f:
         f.write(page)
 
 
 def extract_title(html: HTMLNode) -> tuple[str, HTMLNode]:
-    title = "This is a placeholder"
+    header = html.children[0]
+    if header.tag != "h1":
+        raise ValueError(f"Header 1 not found, got tag={header.tag} instead.")
+    title = header.children[0].value
 
     return title, html
 

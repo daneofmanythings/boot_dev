@@ -259,7 +259,6 @@ def markdown_to_html_node(markdown: str) -> HTMLNode:
     root = ParentNode(tag="div", children=[], props={})
     for block in blocks:
         block_type = block_to_block_type(block)
-        print(block_type.name)
         match block_type:
             case (
                 BlockType.HEADING6
