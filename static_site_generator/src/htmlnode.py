@@ -50,7 +50,7 @@ class LeafNode(HTMLNode):
 
     def to_html(self):
         if not self.value:
-            raise ValueError("LeafNode must have a value.")
+            raise ValueError(f"LeafNode must have a value. tag = {self.tag}")
 
         if not self.tag:
             return self.value

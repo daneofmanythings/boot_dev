@@ -56,6 +56,9 @@ class TestPeekBlockType:
     def test_code(self):
         assert peek_block_type("```") == BlockType.CODE
 
+    def test_unord_list(self):
+        assert peek_block_type("* htseale\nntasine") == BlockType.UNORD_LIST
+
 
 class TestBlockToBlockType:
     def test_default(self):
@@ -82,8 +85,8 @@ class TestBlockToBlockType:
 
         assert block_type == BlockType.PARAGRAPH
 
-    def test_star_list(self):
-        text = "* This is\n* a star\n* list."
+    def test_unord_list(self):
+        text = "* This is\n* an unordered\n* list."
         block_type = block_to_block_type(text)
 
         assert block_type == BlockType.UNORD_LIST
@@ -98,7 +101,7 @@ class TestBlockToBlockType:
         text = "* This is\n* a star\n- list."
         block_type = block_to_block_type(text)
 
-        assert block_type == BlockType.PARAGRAPH
+        assert block_type == BlockType.UNORD_LIST
 
     def test_ordered_list(self):
         text = "1. This is\n2. an ordered\n3. list."

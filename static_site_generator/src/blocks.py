@@ -20,11 +20,8 @@ class BlockType(StrEnum):
     CODE = "```"
     QUOTE = ">"
     ORD_LIST = "1."
-    # TODO:: fix star and dash to mix in lists with no issue
-    STAR_LIST = "*"
+    UNORD_LIST = "*"
     DASH_LIST = "-"
-    UNORD_LIST = ""
-
     PARAGRAPH = ""
 
     @staticmethod
@@ -45,11 +42,10 @@ class BlockType(StrEnum):
                 if not block_lines[i].startswith(str(i + 1) + "."):
                     return False
         # NOTE: verifies the unordered list regardless of the delimiter
-        elif block_type == BlockType.STAR_LIST or block_type == BlockType.DASH_LIST:
+        elif block_type == BlockType.UNORD_LIST or block_type == BlockType.DASH_LIST:
             for line in block_lines:
-                if not line.startswith(
-                    BlockType.STAR_LIST.value
-                ) or not line.startswith(BlockType.DASH_LIST.value):
+                if not is_unordered(line):
+                    print(f"block type val failed for block: {block} on line: {line}")
                     return False
         else:
             for line in block_lines:
@@ -57,6 +53,12 @@ class BlockType(StrEnum):
                     return False
 
         return True
+
+
+def is_unordered(line: str) -> bool:
+    unord = line.startswith(BlockType.UNORD_LIST.value)
+    dash = line.startswith(BlockType.DASH_LIST.value)
+    return unord or dash
 
 
 class BlockTypeType(Enum):
@@ -74,13 +76,14 @@ class BlockTypeType(Enum):
         BlockType.HEADING4,
         BlockType.HEADING5,
         BlockType.HEADING6,
+        BlockType.PARAGRAPH,
     }
     START_AND_END = {
         BlockType.CODE,
     }
     EVERY_LINE = {
         BlockType.QUOTE,
-        BlockType.STAR_LIST,
+        BlockType.UNORD_LIST,
         BlockType.DASH_LIST,
         BlockType.ORD_LIST,
     }
@@ -109,15 +112,16 @@ def markdown_to_blocks(markdown: str) -> list[str]:
     return blocks
 
 
+# NOTE: this is clunkier than i'd like.
 def peek_block_type(block: str) -> BlockType:
-    # NOTE: this is clunkier than i'd like.
+    # loops through all blocktypes to find a match
     for block_type_enum in BlockType.__members__.values():
-        if not block_type_enum.value:
+        if not block_type_enum.value:  # skips the "" case.
             continue
-        if block.startswith(block_type_enum.value):
+        if block.startswith(block_type_enum.value):  # returns a match
             return block_type_enum
 
-    return BlockType.PARAGRAPH
+    return BlockType.PARAGRAPH  # returns if there is no match
 
 
 def block_to_block_type(block: str) -> BlockType:
@@ -130,8 +134,6 @@ def block_to_block_type(block: str) -> BlockType:
     block_type_type = BlockTypeType.get_type(block_type)
     match block_type_type:
         case BlockTypeType.START:
-            # The validation process was handled because of the identification
-            # step in the try block
             return block_type
 
         case BlockTypeType.START_AND_END:
@@ -146,7 +148,7 @@ def block_to_block_type(block: str) -> BlockType:
             raise ValueError(f"Unhandled BlockTypeType: {block_type_type}")
 
     # HTML doesn't distinguish between the two representations of unordered lists.
-    if block_type == BlockType.STAR_LIST or block_type == BlockType.DASH_LIST:
+    if block_type == BlockType.DASH_LIST:
         return BlockType.UNORD_LIST
 
     return block_type
@@ -216,10 +218,10 @@ def unord_list_to_html(block: str) -> HTMLNode:
     children = list()
 
     # Normalizing the list delimiters
-    block = block[1:].replace("\n*", "\n-")
+    block = block[1:].replace("\n*", "\n-")  # Cropping out the first delimiter
 
     # Splitting up the list items to be thier own nodes
-    list_items = block.split("\n-")  # Cropping out first delimeter
+    list_items = block.split("\n-")
 
     # Constructing the list item nodes
     for item in list_items:
@@ -257,6 +259,7 @@ def markdown_to_html_node(markdown: str) -> HTMLNode:
     root = ParentNode(tag="div", children=[], props={})
     for block in blocks:
         block_type = block_to_block_type(block)
+        print(block_type.name)
         match block_type:
             case (
                 BlockType.HEADING6
